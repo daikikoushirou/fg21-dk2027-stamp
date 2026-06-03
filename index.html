@@ -1181,12 +1181,15 @@ body {
 
 <!-- ═══ 管理ページ ═══ -->
 <div class="page" id="pageAdmin">
-  <div class="admin-header">
+    <div class="admin-header">
     <div>
       <div class="section-eyebrow">ADMIN</div>
       <h2 class="section-title" style="margin-bottom:0">受注管理</h2>
     </div>
-    <button class="btn btn-ghost" onclick="reloadOrders()">🔄 更新</button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" onclick="reloadOrders()">🔄 更新</button>
+      <button class="btn btn-ghost" onclick="adminLogout()">🚪 ログアウト</button>
+    </div>
   </div>
 
   <div class="admin-stats" id="adminStats"></div>
@@ -1217,6 +1220,11 @@ body {
   <div class="modal" onclick="event.stopPropagation()">
     <button class="modal-close" onclick="closePwModal()">✕</button>
     <div class="modal-title">🔒 管理者ログイン</div>
+    <div class="field">
+      <label>メールアドレス</label>
+      <input type="email" id="pwEmail" placeholder="admin@example.com" autocomplete="email"
+        onkeydown="if(event.key==='Enter')document.getElementById('pwInput').focus()">
+    </div>
     <div class="field">
       <label>パスワード</label>
       <input type="password" id="pwInput" placeholder="パスワードを入力"
@@ -1283,12 +1291,20 @@ body {
 //   設定
 // ═══════════════════════════════════════════
 const SUPABASE_URL = 'https://bzjwhtemobtrfaghsdwt.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6andodGVtb2J0cmZhZ2hzZHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDY3MzEsImV4cCI6MjA5NTQ4MjczMX0.NJuzPVdv3KWfNFswlfhYqX-ppC5wFUX-7nGXN_HiCLI'; // ← SupabaseのAnon Keyを入れてください
-const ADMIN_PASSWORD = 'YOUR_ADMIN_PASSWORD_HERE'; // ← 管理パスワードを設定してください
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE'; // ← SupabaseのAnon Keyを入れてください
 const STORAGE_BUCKET = 'stamp-images';
 const STORAGE_RESULTS_BUCKET = 'stamp-results';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// 起動時にセッション確認
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    adminUnlocked = true;
+    document.querySelector('.admin-toggle-btn').textContent = '⚙️ 管理';
+  }
+})();
 
 // ═══════════════════════════════════════════
 //   テーマ切り替え
@@ -1560,29 +1576,48 @@ function showAdminOrLogin() {
   }
 }
 
-// パスワードモーダル
+// ログインモーダル
 function openPwModal() {
   document.getElementById('pwModal').classList.add('open');
+  document.getElementById('pwEmail').value = '';
   document.getElementById('pwInput').value = '';
   document.getElementById('pwError').style.display = 'none';
-  setTimeout(() => document.getElementById('pwInput').focus(), 100);
+  setTimeout(() => document.getElementById('pwEmail').focus(), 100);
 }
 function closePwModal(e) {
   if (e && e.target !== document.getElementById('pwModal')) return;
   document.getElementById('pwModal').classList.remove('open');
 }
-function submitPw() {
+async function submitPw() {
+  const email = document.getElementById('pwEmail').value.trim();
   const pw = document.getElementById('pwInput').value;
-  if (pw === ADMIN_PASSWORD) {
-    adminUnlocked = true;
-    document.getElementById('pwModal').classList.remove('open');
-    showPage('pageAdmin');
-    reloadOrders();
-  } else {
-    document.getElementById('pwError').style.display = 'block';
-    document.getElementById('pwInput').value = '';
-    document.getElementById('pwInput').focus();
+  const errEl = document.getElementById('pwError');
+  if (!email || !pw) {
+    errEl.textContent = 'メールアドレスとパスワードを入力してください';
+    errEl.style.display = 'block';
+    return;
   }
+  showLoading('ログイン中...');
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+  hideLoading();
+  if (error) {
+    errEl.textContent = 'メールアドレスまたはパスワードが違います';
+    errEl.style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    return;
+  }
+  adminUnlocked = true;
+  document.getElementById('pwModal').classList.remove('open');
+  document.querySelector('.admin-toggle-btn').textContent = '⚙️ 管理';
+  showPage('pageAdmin');
+  reloadOrders();
+}
+async function adminLogout() {
+  await sb.auth.signOut();
+  adminUnlocked = false;
+  document.querySelector('.admin-toggle-btn').textContent = '🔒 管理';
+  showPage('pageFront');
+  showToast('ログアウトしました');
 }
 
 // ページ切り替え
