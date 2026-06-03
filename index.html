@@ -121,29 +121,29 @@
 }
 
 [data-theme="futaba"] {
-  --bg:           #800000;
-  --bg2:          #6a0000;
-  --card:         #ffffff;
-  --card2:        #fff8f8;
+  --bg:           #ffffee;
+  --bg2:          #f0e0d6;
+  --card:         #f0e0d6;
+  --card2:        #ffffee;
   --ink:          #800000;
-  --ink2:         #600000;
-  --muted:        #a06060;
-  --border:       #e8c0c0;
-  --border2:      #d8a0a0;
+  --ink2:         #800000;
+  --muted:        #789922;
+  --border:       #d9bdb4;
+  --border2:      #c8a898;
   --primary:      #800000;
   --primary-dark: #600000;
   --primary-light:#aa2020;
-  --primary-bg:   #ffe8e8;
-  --accent:       #c04000;
-  --accent-bg:    #fff0e8;
-  --green:        #008000;
-  --green-bg:     #e8ffe8;
-  --blue:         #0000c0;
-  --blue-bg:      #e8e8ff;
-  --gold:         #808000;
-  --gold-bg:      #fffff0;
-  --shadow:       rgba(128,0,0,.15);
-  --shadow-lg:    rgba(128,0,0,.30);
+  --primary-bg:   #f0e0d6;
+  --accent:       #789922;
+  --accent-bg:    #ffffee;
+  --green:        #789922;
+  --green-bg:     #ffffee;
+  --blue:         #800000;
+  --blue-bg:      #f0e0d6;
+  --gold:         #800000;
+  --gold-bg:      #f0e0d6;
+  --shadow:       rgba(128,0,0,.10);
+  --shadow-lg:    rgba(128,0,0,.20);
 }
 
 /* ═══════════════════════════════════════════
@@ -1018,7 +1018,7 @@ body {
 <!-- ═══ ヘッダー ═══ -->
 <header class="site-header">
   <div class="site-header-left">
-    <span class="site-header-stamp">朱</span>
+    <span class="site-header-stamp">芋</span>
     <div class="site-header-title">
       スタンプ出力請負
       <div class="site-header-sub">大喜幸四郎 × ふたば★学園祭２１</div>
@@ -1055,7 +1055,7 @@ body {
   <h1 class="section-title">スタンプ印面の出力を依頼する</h1>
   <p class="section-desc">
     ふたば★学園祭２１ スタンプラリーに参加されるサークルさん向けのスタンプ出力サービスです。<br>
-    印面画像をお送りいただくと、レーザー彫刻機（40W）で加工し、スタンプに仕上げてイベント当日にお渡しします。<br>
+    印面画像をお送りいただくと、スタンプ印面用樹脂シートにレーザー刻印後、台木に貼り付け、スタンプに仕上げてイベント当日にお渡しします。<br>
     <strong>1点300円（当日現金払い）</strong>
   </p>
 
@@ -1167,7 +1167,7 @@ body {
     </div>
 
     <button class="submit-btn" id="submitBtn" onclick="submitOrder()">
-      朱　依頼を送信する
+      芋　依頼を送信する
     </button>
   </div>
 
@@ -1291,7 +1291,7 @@ body {
 //   設定
 // ═══════════════════════════════════════════
 const SUPABASE_URL = 'https://bzjwhtemobtrfaghsdwt.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6andodGVtb2J0cmZhZ2hzZHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDY3MzEsImV4cCI6MjA5NTQ4MjczMX0.NJuzPVdv3KWfNFswlfhYqX-ppC5wFUX-7nGXN_HiCLI'; // ← SupabaseのAnon Keyを入れてください
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE'; // ← SupabaseのAnon Keyを入れてください
 const STORAGE_BUCKET = 'stamp-images';
 const STORAGE_RESULTS_BUCKET = 'stamp-results';
 
