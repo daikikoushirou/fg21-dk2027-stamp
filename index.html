@@ -1068,15 +1068,15 @@ body {
       </div>
       <div class="field">
         <label>サークル名 <span class="required">必須</span></label>
-        <input type="text" id="circleName" placeholder="大喜幸四郎" autocomplete="off">
+        <input type="text" id="circleName" placeholder="大喜幸四郎" autocomplete="off" maxlength="100">
       </div>
       <div class="field">
         <label>スペース番号 <span class="optional">任意</span></label>
-        <input type="text" id="circleSpace" placeholder="例：か-07a" autocomplete="off">
+        <input type="text" id="circleSpace" placeholder="例：か-07a" autocomplete="off" maxlength="50">
       </div>
       <div class="field">
         <label>お名前 <span class="optional">任意</span></label>
-        <input type="text" id="name" placeholder="ルーニー" autocomplete="off">
+        <input type="text" id="name" placeholder="ルーニー" autocomplete="off" maxlength="100">
       </div>
     </div>
 
@@ -1092,7 +1092,7 @@ body {
       <div class="contact-input-wrap active" id="contact-email">
         <div class="field">
           <label>メールアドレス <span class="required">必須</span></label>
-          <input type="email" id="emailInput" placeholder="example@example.com" autocomplete="email">
+          <input type="email" id="emailInput" placeholder="example@example.com" autocomplete="email" maxlength="254">
         </div>
       </div>
       <div class="contact-input-wrap" id="contact-x">
@@ -1100,7 +1100,7 @@ body {
           <label>X アカウント <span class="required">必須</span></label>
           <div class="input-with-prefix">
             <span class="input-prefix">@</span>
-            <input type="text" id="xInput" placeholder="username" oninput="this.value=this.value.replace(/^@/,'')">
+            <input type="text" id="xInput" placeholder="username" maxlength="50" oninput="this.value=this.value.replace(/^@/,'')">
           </div>
         </div>
       </div>
@@ -1162,7 +1162,7 @@ body {
         <span class="form-card-title-icon">📝</span> 備考・要望
       </div>
       <div class="field">
-        <textarea id="note" placeholder="縮小・切り抜きのご要望、その他ご連絡事項があればご記入ください"></textarea>
+        <textarea id="note" placeholder="縮小・切り抜きのご要望、その他ご連絡事項があればご記入ください" maxlength="1000"></textarea>
       </div>
     </div>
 
@@ -1488,11 +1488,33 @@ async function submitOrder() {
   if (contactPref === 'x' && !xVal) { showToast('⚠️ Xアカウントを入力してください'); return; }
   if (!selectedFile) { showToast('⚠️ 印面画像をアップロードしてください'); return; }
 
+  // 文字数制限
+  if (circleName.length > 100) { showToast('⚠️ サークル名が長すぎます（100文字以内）'); return; }
+  if (circleSpace.length > 50) { showToast('⚠️ スペース番号が長すぎます'); return; }
+  if (name.length > 100) { showToast('⚠️ お名前が長すぎます（100文字以内）'); return; }
+  if (emailVal.length > 254) { showToast('⚠️ メールアドレスが長すぎます'); return; }
+  if (xVal.length > 50) { showToast('⚠️ Xアカウントが長すぎます'); return; }
+  if (note.length > 1000) { showToast('⚠️ 備考が長すぎます（1000文字以内）'); return; }
+
+  // メール形式チェック
+  if (contactPref === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+    showToast('⚠️ メールアドレスの形式が正しくありません'); return;
+  }
+
+  // ファイルチェック
+  if (!selectedFile.type.startsWith('image/')) {
+    showToast('⚠️ 画像ファイルを選択してください'); return;
+  }
+  if (selectedFile.size > 10 * 1024 * 1024) {
+    showToast('⚠️ 画像サイズが大きすぎます（10MB以内）'); return;
+  }
+
   showLoading('送信中...');
 
   try {
     // 画像アップロード（元画像）
-    const origExt = selectedFile.name.split('.').pop() || 'png';
+    const rawExt = (selectedFile.name.split('.').pop() || 'png').toLowerCase();
+    const origExt = /^[a-z0-9]{1,5}$/.test(rawExt) ? rawExt : 'png';
     const origPath = `orders/${Date.now()}_orig.${origExt}`;
     const { error: upErr1 } = await sb.storage.from(STORAGE_BUCKET).upload(origPath, selectedFile, { upsert: false });
     if (upErr1) throw upErr1;
@@ -1530,8 +1552,8 @@ async function submitOrder() {
 
     const contact = contactPref === 'email' ? emailVal : `@${xVal}`;
     document.getElementById('successMsg').innerHTML =
-      `<strong>${circleName}</strong> さんの受注を受け付けました。<br>` +
-      `${contactPref === 'email' ? 'メール' : 'X DM'}（${contact}）にて進捗をご連絡します。<br><br>` +
+      `<strong>${escHtml(circleName)}</strong> さんの受注を受け付けました。<br>` +
+      `${contactPref === 'email' ? 'メール' : 'X DM'}（${escHtml(contact)}）にて進捗をご連絡します。<br><br>` +
       `当日（2027年5月3日）現金300円をご用意ください。`;
     document.getElementById('successCard').classList.add('visible');
 
@@ -1824,7 +1846,16 @@ async function handleAdminUpload(input) {
   const resultList = document.getElementById('uploadResultList');
 
   for (const file of files) {
-    const path = `results/${currentOrderForUpload}/${Date.now()}_${file.name}`;
+    if (!file.type.startsWith('image/')) {
+      resultList.innerHTML += `<div class="upload-result-item"><span class="item-icon">⚠️</span><span class="item-name">${escHtml(file.name)}（画像ではないためスキップ）</span></div>`;
+      continue;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      resultList.innerHTML += `<div class="upload-result-item"><span class="item-icon">⚠️</span><span class="item-name">${escHtml(file.name)}（10MB超のためスキップ）</span></div>`;
+      continue;
+    }
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `results/${currentOrderForUpload}/${Date.now()}_${safeName}`;
     const { error } = await sb.storage.from(STORAGE_RESULTS_BUCKET).upload(path, file, { upsert: false });
     if (error) {
       resultList.innerHTML += `<div class="upload-result-item"><span class="item-icon">❌</span><span class="item-name">${escHtml(file.name)}</span></div>`;
